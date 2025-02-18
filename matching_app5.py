@@ -1,6 +1,7 @@
 import streamlit as st
 import uuid  # 一意のIDを生成するためのモジュール
 import pandas as pd  # データ保存用
+import openpyxl
 import os
 
 # アプリの状態管理
