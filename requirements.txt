@@ -1,4 +1,4 @@
 streamlit==1.31.1
-psycopg2==2.9.10
+psycopg2-binary==2.9.10
 supabase==2.13.0
 uuid==1.30
