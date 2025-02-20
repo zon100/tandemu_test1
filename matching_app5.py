@@ -2,6 +2,42 @@ import streamlit as st
 import uuid  # 一意のIDを生成するためのモジュール
 import pandas as pd  # データ保存用
 import os
+import psycopg2
+from supabase import create_client, Client
+
+
+
+# SupabaseのURLとキー（環境変数で管理するのが望ましい）
+SUPABASE_URL = "https://zancatjxgdofhxlemcgf.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphbmNhdGp4Z2RvZmh4bGVtY2dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MDQyNDQsImV4cCI6MjA1NTQ4MDI0NH0.FeLkr0k_WSLXGQFtU2PyKMhMS_Zywbzb_FSTAIOsjsk"
+
+# Supabaseクライアントの作成
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+
+# プロフィールをSupabaseに保存
+def save_profile_to_supabase(profile):
+    email = profile.get("email")  # 入力されたメールアドレスを取得
+    
+    # 日本人と留学生で異なるテーブルを使用
+    table_name = "profiles" if profile["type"] == "Japanese" else "profiles_exchange_students"
+
+    # 1. 既に同じメールアドレスのデータがあるか確認
+    existing_user = supabase.table(table_name).select("*").eq("email", email).execute()
+     # 同じ ID がすでに存在するか確認
+    existing_user = supabase.table(table_name).select("id").eq("id", profile["id"]).execute()
+
+    if existing_user.data:  # 既存のユーザーがいる場合
+        # 既存のメールアドレスを持つプロフィールを削除
+        supabase.table(table_name).delete().eq("email", email).execute()
+    if existing_user.data:  # ID がすでに存在する場合
+        profile["id"] = str(uuid.uuid4())  # 新しい UUID を生成
+
+    # 2. メールアドレスが存在しない場合は、新規登録
+    data = supabase.table(table_name).insert(profile).execute()
+    return data
+
 
 # アプリの状態管理
 if "current_mode" not in st.session_state:
@@ -15,13 +51,8 @@ if "all_profiles" not in st.session_state:
 if "events" not in st.session_state:
     st.session_state.events = []  # イベントのリストを初期化
 
-# Excelファイルの保存場所
-EXCEL_FILE = "profiles.xlsx"
 
-# プロフィールをExcelファイルに保存
-def save_profiles_to_excel():
-    df = pd.DataFrame(st.session_state.all_profiles)
-    df.to_excel(EXCEL_FILE, index=False)
+
 
 # ホーム画面
 def home():
@@ -55,6 +86,7 @@ def profile_input():
         profile["type"] = "Exchange Student"
         profile["name"] = st.text_input("Name")
         profile["faculty"] = st.text_input("Faculty")
+        profile["age"] = st.number_input("age", min_value=0, max_value=100, step=1)
         profile["country"] = st.text_input("Country of origin")
         profile["hobby"] = st.text_input("Hobby")
         profile["learning_language"] = st.text_input("Learning Language")  # 追加
@@ -70,7 +102,7 @@ def profile_input():
             st.session_state.all_profiles = [p if p["id"] != profile["id"] else profile for p in st.session_state.all_profiles]
 
         st.session_state.profile = profile
-        save_profiles_to_excel()  # Excelに保存
+        save_profile_to_supabase(profile)  # Supabaseに保存
         st.success("プロフィールが登録されました！")
         st.session_state.current_mode = "menu"
 
