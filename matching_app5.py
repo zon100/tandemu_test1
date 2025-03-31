@@ -229,12 +229,43 @@ def mode_selection():
 # メッセージモード
 
 # メッセージモード
+def check_unread_messages():
+    """未読メッセージを確認し、通知を表示"""
+    if not st.session_state.get("profile"):
+        return
+
+    user_id = st.session_state.profile["id"]
+
+    # 未読メッセージを取得
+    unread_messages = supabase.table("messages") \
+        .select("from_user, message, timestamp") \
+        .eq("to_user", user_id) \
+        .eq("is_read", False) \
+        .order("timestamp", desc=True) \
+        .execute()
+
+    if unread_messages.data:
+        latest_message = unread_messages.data[0]
+        sender_id = latest_message["from_user"]
+
+        # 送信者の名前を取得
+        sender_profile = supabase.table("profiles") \
+            .select("name") \
+            .eq("id", sender_id) \
+            .single() \
+            .execute()
+
+        sender_name = sender_profile.data["name"] if sender_profile.data else "不明なユーザー"
+
+        # 通知を表示
+        st.toast(f"📩 {sender_name} から新しいメッセージがあります！", icon="📨")
 
 def message_mode():
     """メッセージの送信相手を選択する画面"""
     st.title("メッセージモード / Message Mode")
     # 3秒ごとに自動更新
     st_autorefresh(interval=3000, key="message_refresh")
+    check_unread_messages()  # 🔔 追加
     st.write("チャットしたい相手を選んでください / Select a user to chat with.")
 
     # 自分のプロフィール取得
@@ -321,6 +352,12 @@ def chat_screen():
     messages = supabase.table("messages").select("from_user, to_user, message, timestamp") \
         .or_(f"and(from_user.eq.{user_id},to_user.eq.{chat_partner['id']}),and(from_user.eq.{chat_partner['id']},to_user.eq.{user_id})") \
         .order("timestamp", desc=False).execute()
+
+    # 未読メッセージを既読に更新
+    unread_ids = [msg["id"] for msg in messages.data if msg["to_user"] == user_id and not msg.get("is_read", False)]
+    if unread_ids:
+        supabase.table("messages").update({"is_read": True}).in_("id", unread_ids).execute()
+
 
     # メッセージを表示
     st.write("### メッセージ履歴 / Message History")
