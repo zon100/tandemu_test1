@@ -4,7 +4,6 @@ import pandas as pd  # データ保存用
 import os
 import psycopg2
 from supabase import create_client, Client
-from streamlit_autorefresh import st_autorefresh  # 追加
 import re
 
 
@@ -285,8 +284,7 @@ def chat_screen():
     """選択したユーザーとのチャット画面"""
     st.title("チャット画面 / Chat Screen")
 
-    # 3秒ごとに自動更新
-    #st_autorefresh(interval=3000, key="chat_refresh")
+    
 
     # 自分のプロフィール取得
     if not st.session_state.get("profile"):
