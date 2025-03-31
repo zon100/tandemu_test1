@@ -4,6 +4,8 @@ import pandas as pd  # データ保存用
 import os
 import psycopg2
 from supabase import create_client, Client
+import streamlit as st
+from streamlit_autorefresh import st_autorefresh  # 自動更新を追加
 import re
 
 
@@ -231,6 +233,8 @@ def mode_selection():
 def message_mode():
     """メッセージの送信相手を選択する画面"""
     st.title("メッセージモード / Message Mode")
+    # 3秒ごとに自動更新
+    st_autorefresh(interval=3000, key="message_refresh")
     st.write("チャットしたい相手を選んでください / Select a user to chat with.")
 
     # 自分のプロフィール取得
@@ -284,7 +288,8 @@ def chat_screen():
     """選択したユーザーとのチャット画面"""
     st.title("チャット画面 / Chat Screen")
 
-    
+    # 3秒ごとに自動更新
+    st_autorefresh(interval=3000, key="chat_refresh")
 
     # 自分のプロフィール取得
     if not st.session_state.get("profile"):
@@ -368,6 +373,9 @@ elif st.session_state.current_mode == "chat":
 # 人探しモード
 def search_mode():
     st.title("人探しモード / Search Mode")
+
+    # 3秒ごとに自動更新
+    st_autorefresh(interval=3000, key="search_refresh")
     
     # Supabaseから登録者一覧を取得
     def load_profiles_from_supabase():
@@ -461,6 +469,10 @@ def delete_event(event_id):
 # Streamlit UI
 def event_mode():
     st.title("イベント機能 / Event Features")
+
+    # 3秒ごとに自動更新
+    st_autorefresh(interval=3000, key="event_refresh")
+
     menu = st.radio("イベントメニューを選択してください", ["イベント参加 / Join Event", "イベント作成 / Create Event"])
 
     if menu == "イベント参加 / Join Event":
