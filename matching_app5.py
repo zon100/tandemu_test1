@@ -350,12 +350,14 @@ def chat_screen():
     st.subheader(f"チャット相手: {chat_partner['name']} / Chat Partner: {chat_partner['name']}")
 
     # メッセージ履歴の取得（送受信両方）
-    messages = supabase.table("messages").select("from_user, to_user, message, timestamp") \
-        .or_(f"and(from_user.eq.{user_id},to_user.eq.{chat_partner['id']}),and(from_user.eq.{chat_partner['id']},to_user.eq.{user_id})") \
-        .order("timestamp", desc=False).execute()
+    messages = supabase.table("messages") \
+    .select("id", "from_user", "to_user", "message", "timestamp", "is_read") \
+    .or_(f"and(from_user.eq.{user_id},to_user.eq.{chat_partner['id']}),and(from_user.eq.{chat_partner['id']},to_user.eq.{user_id})") \
+    .order("timestamp", desc=False) \
+    .execute()
 
     # 未読メッセージを既読に更新
-    unread_ids = [msg["id"] for msg in messages.data if msg["to_user"] == user_id and not msg.get("is_read", False)]
+    unread_ids = [msg.get("id") for msg in messages.data if msg.get("to_user") == user_id and not msg.get("is_read", False)]
     if unread_ids:
         supabase.table("messages").update({"is_read": True}).in_("id", unread_ids).execute()
 
