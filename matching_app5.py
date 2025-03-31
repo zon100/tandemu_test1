@@ -260,12 +260,13 @@ def check_unread_messages():
         # 通知を表示
         st.toast(f"📩 {sender_name} から新しいメッセージがあります！", icon="📨")
 
+
 def message_mode():
     """メッセージの送信相手を選択する画面"""
     st.title("メッセージモード / Message Mode")
+    check_unread_messages()  # 🔔 追加
     # 3秒ごとに自動更新
     st_autorefresh(interval=3000, key="message_refresh")
-    check_unread_messages()  # 🔔 追加
     st.write("チャットしたい相手を選んでください / Select a user to chat with.")
 
     # 自分のプロフィール取得
